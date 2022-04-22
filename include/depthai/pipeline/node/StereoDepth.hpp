@@ -58,7 +58,7 @@ class StereoDepth : public NodeCRTP<Node, StereoDepth, StereoDepthProperties> {
     Input right{*this, "right", Input::Type::SReceiver, false, 8, true, {{DatatypeEnum::ImgFrame, true}}};
 
     /**
-     * Outputs ImgFrame message that carries RAW16 encoded (0..65535) depth data in millimeters.
+     * Outputs ImgFrame message that carries RAW16 encoded (0..65535) depth data in depth units (millimeter by default).
      *
      * Non-determined / invalid depth values are set to 0
      */
@@ -68,7 +68,10 @@ class StereoDepth : public NodeCRTP<Node, StereoDepth, StereoDepthProperties> {
      * Outputs ImgFrame message that carries RAW8 / RAW16 encoded disparity data:
      * RAW8 encoded (0..95) for standard mode;
      * RAW8 encoded (0..190) for extended disparity mode;
-     * RAW16 encoded (0..3040) for subpixel disparity mode (32 subpixel levels on top of standard mode).
+     * RAW16 encoded for subpixel disparity mode:
+     * - 0..760 for 3 fractional bits (by default)
+     * - 0..1520 for 4 fractional bits
+     * - 0..3040 for 5 fractional bits
      */
     Output disparity{*this, "disparity", Output::Type::MSender, {{DatatypeEnum::ImgFrame, false}}};
 
@@ -240,7 +243,7 @@ class StereoDepth : public NodeCRTP<Node, StereoDepth, StereoDepthProperties> {
     void setLeftRightCheck(bool enable);
 
     /**
-     * Computes disparity with sub-pixel interpolation (5 fractional bits).
+     * Computes disparity with sub-pixel interpolation (3 fractional bits by default).
      *
      * Suitable for long range. Currently incompatible with extended disparity
      */

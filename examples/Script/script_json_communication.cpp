@@ -21,7 +21,7 @@ int main() {
     script->setScript(R"(
         import json
 
-        # Recieve bytes from the host
+        # Receive bytes from the host
         data = node.io['in'].get().getData()
         jsonStr = str(data, 'utf-8')
         dict = json.loads(jsonStr)
@@ -55,6 +55,7 @@ int main() {
     auto jsonData = device.getOutputQueue("out")->get<dai::Buffer>();
     auto changedDict = nlohmann::json::parse(jsonData->getData());
     cout << "changedDict: " << changedDict << "\n";
-
+    const nlohmann::json expectedDict{{"one", 2}, {"foo", "baz"}};
+    if(expectedDict != changedDict) return 1;
     return 0;
 }
