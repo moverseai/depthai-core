@@ -34,6 +34,22 @@ int main() {
     left->out.link(xout->input);
     right->out.link(xout->input);
 
+    auto script = pipeline.create<dai::node::Script>();
+    script->setScript(R"(
+        import json
+        import time
+
+        # Predefined buffer variables used for sending result to host
+        buf1 = NNData(169)
+
+        while True:
+            buf1.setLayer("type", [float(0.77)])
+            buf1.setLayer("lm_score", [float(0.55)])
+            node.io['out'].send(buf1)
+            time.sleep(1)
+    )");
+    script->outputs["out"].link(xout->input);
+
     auto queue = std::queue<callbackType>();
     std::mutex queueMtx;
 
@@ -49,6 +65,11 @@ int main() {
             cb.name = num == 0 ? "color" : (num == 1 ? "left" : "right");
             cb.frame = imgFrame->getCvFrame();
             queue.push(cb);
+        } else if(dynamic_cast<dai::NNData*>(callback.get()) != nullptr) {
+            auto _frameLocal = static_cast<dai::NNData*>(callback.get());
+            std::cout << "getAllLayers.size() = " << _frameLocal->getAllLayers().size() << "\n";
+            const auto lmScore = _frameLocal->getLayerFp16("lm_score")[0];
+            std::cout << "lmScore" << lmScore << "\n";
         }
     };
 
