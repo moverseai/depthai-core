@@ -285,7 +285,8 @@ void DeviceBootloader::init(bool embeddedMvcmd, const dai::Path& pathToMvcmd, tl
             Type desiredBootloaderType = type.value_or(bootloaderType);
 
             // If not correct type OR if allowFlashingBootloader is set, then boot internal (latest) bootloader of correct type
-            if((desiredBootloaderType != bootloaderType) || allowFlashingBootloader) {
+            //if((desiredBootloaderType != bootloaderType) || allowFlashingBootloader) {
+            if(0) {
                 // prepare watchdog thread, which will keep device alive
                 std::atomic<bool> wdRunning{true};
                 std::thread wd = std::thread([&]() {
