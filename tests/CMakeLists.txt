@@ -235,3 +235,6 @@ dai_add_test(bootloader_version_test src/bootloader_version_test.cpp)
 
 # XLinkIn -> XLinkOut passthrough with large frames
 dai_add_test(xlink_roundtrip_test src/xlink_roundtrip_test.cpp)
+
+# XLink with ImageManip test
+dai_add_test(xlink_with_imagemanip_test src/xlink_with_imagemanip_test.cpp)
