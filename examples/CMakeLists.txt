@@ -227,6 +227,14 @@ hunter_private_data(
     LOCATION tiny-vechicle-detection_bin
 )
 
+# yolo bin model for S3 example
+hunter_private_data(
+    URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/yolov5n_2022.1_vpux.blob"
+    SHA1 "4b832d04d9afb1288169f96890520382fdeed4cc"
+    FILE "yolov5n_2022.1_vpux.blob"
+    LOCATION yolo-blob-s3
+)
+
 ## message(STATUS "Location of test1.data: ${test1_data}")
 
 # bootloader
@@ -389,8 +397,10 @@ dai_add_example(tmp_preview tmp/tmp_preview.cpp OFF)
 dai_add_example(tmp_nn tmp/tmp_nn.cpp OFF)
 dai_add_example(tmp_detection_parser_mobilenet tmp/tmp_detection_parser_mobilenet.cpp OFF)
 dai_add_example(tmp_detection_parser_yolo tmp/tmp_detection_parser_yolo.cpp OFF)
+dai_add_example(tmp_nn_blob tmp/tmp_nn_blob.cpp OFF)
 target_compile_definitions(tmp_nn PRIVATE MODEL_XML_PATH="${person_detection_xml}" MODEL_BIN_PATH="${person_detection_bin}")
 target_compile_definitions(tmp_detection_parser_mobilenet PRIVATE MODEL_XML_PATH="${person_detection_xml}" MODEL_BIN_PATH="${person_detection_bin}")
 target_compile_definitions(tmp_detection_parser_yolo PRIVATE MODEL_XML_PATH="${tiny-vechicle-detection_xml}" MODEL_BIN_PATH="${tiny-vechicle-detection_bin}")
+target_compile_definitions(tmp_nn_blob PRIVATE MODEL_BLOB_PATH="${yolo-blob-s3}")
 
 dai_add_example(tmp_mono tmp/tmp_mono.cpp OFF)
