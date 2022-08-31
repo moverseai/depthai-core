@@ -31,39 +31,39 @@ int main(int argc, char** argv) {
 
     // Define sources and outputs
     auto nn = pipeline.create<dai::node::YoloDetectionNetwork>();
-    auto xin = pipeline.create<dai::node::XLinkIn>();
-    auto xout = pipeline.create<dai::node::XLinkOut>();
+    auto camRgb = pipeline.create<dai::node::ColorCamera>();
+    auto xoutRgb = pipeline.create<dai::node::XLinkOut>();
+    auto xoutDetections = pipeline.create<dai::node::XLinkOut>();
 
-    nn->setXmlModelPath(MODEL_XML_PATH, MODEL_BIN_PATH);
-    nn->setNumInferenceThreads(10);
+    camRgb->setPreviewSize(MODEL_IN_WIDTH, MODEL_IN_HEIGHT);
+    camRgb->setColorOrder(dai::ColorCameraProperties::ColorOrder::BGR);
 
-    xin->setStreamName("nn_in");
-    xout->setStreamName("nn_out");
+    camRgb->setInterleaved(false);
 
-    xin->setMaxDataSize(MODEL_IN_WIDTH * MODEL_IN_HEIGHT * 3);
-    xin->setNumFrames(4);
+    nn->setBlobPath(MODEL_BLOB_PATH);
+    nn->setNumInferenceThreads(2);
+
+    xoutRgb->setStreamName("rgb");
+    xoutDetections->setStreamName("nn_out");;
 
     // Linking
-    xin->out.link(nn->input);
-    nn->out.link(xout->input);
+    camRgb->preview.link(nn->input);
+    camRgb->preview.link(xoutRgb->input);
+    nn->out.link(xoutDetections->input);
 
     // Detection network settings
     nn->setConfidenceThreshold(0.5f);
     nn->setNumClasses(80);
-    nn->setCoordinateSize(4);  // What does this do?
+    nn->setCoordinateSize(4);
     nn->setAnchors({10, 14, 23, 27, 37, 58, 81, 82, 135, 169, 344, 319});
     nn->setAnchorMasks({{"side26", {1, 2, 3}}, {"side13", {3, 4, 5}}});
     nn->setIouThreshold(0.5f);
 
-    // Open Webcam
-    cv::VideoCapture webcam(camId);
-
     // Connect to device and start pipeline
     dai::Device device(pipeline);
 
-    cv::Mat frame;
-    auto in = device.getInputQueue("nn_in");
     auto detections = device.getOutputQueue("nn_out");
+    auto rgbOutQ = device.getOutputQueue("rgb", 4, false);
 
     // Add bounding boxes and text to the frame and show it to the user
     auto displayFrame = [](std::string name, cv::Mat frame, std::vector<dai::ImgDetection>& detections) {
@@ -98,19 +98,9 @@ int main(int argc, char** argv) {
     float fps = 0;
 
     while(true) {
-        // data to send further
-        // auto tensor = std::make_shared<dai::RawBuffer>();
-        dai::Buffer tensor;
-
-        // Read frame from webcam
-        webcam >> frame;
-
-        // crop and resize
-        cv::Mat resizedFrame = resizeKeepAspectRatio(frame, cv::Size(MODEL_IN_WIDTH, MODEL_IN_HEIGHT), cv::Scalar(0));
-
-        toPlanar(resizedFrame, tensor.getData());
-
-        in->send(tensor);
+        std::shared_ptr<dai::ImgFrame> inRgb;
+        inRgb = rgbOutQ->get<dai::ImgFrame>();
+        auto frame = inRgb->getCvFrame();
 
         counter++;
         auto currentTime = steady_clock::now();
@@ -121,14 +111,14 @@ int main(int argc, char** argv) {
             startTime = currentTime;
         }
 
-        auto inDet = detections->get<dai::ImgDetections>();
+        auto inDet = detections->tryGet<dai::ImgDetections>();
         if(inDet) {
             vDetections = inDet->detections;
             std::stringstream fpsStr;
             fpsStr << "NN fps: " << std::fixed << std::setprecision(2) << fps;
-            cv::putText(resizedFrame, fpsStr.str(), cv::Point(2, MODEL_IN_HEIGHT - 4), cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 255, 255));
+            cv::putText(frame, fpsStr.str(), cv::Point(2, MODEL_IN_HEIGHT - 4), cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 255, 255));
         }
-        displayFrame("nn_out", resizedFrame, vDetections);
+        displayFrame("nn_out", frame, vDetections);
         int key = cv::waitKey(1);
         if(key == 'q') {
             return 0;
