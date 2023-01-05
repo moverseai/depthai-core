@@ -265,7 +265,7 @@ class DeviceBootloader {
 
     /**
      * Clears flashed application on the device, by removing SBR boot structure
-     * Doesnt remove fast boot header capability to still boot the application
+     * Doesn't remove fast boot header capability to still boot the application
      */
     std::tuple<bool, std::string> flashClear(Memory memory = Memory::AUTO);
 
@@ -344,7 +344,7 @@ class DeviceBootloader {
      * @param memory Memory to read
      * @param offset Offset at which to read the specified bytes
      * @param size Number of bytes to read
-     * @param data Data to read to. Must be atleast 'size' number of bytes big
+     * @param data Data to read to. Must be at least 'size' number of bytes big
      * @param progressCallback Callback that sends back a value between 0..1 which signifies current reading progress
      */
     std::tuple<bool, std::string> readCustom(
@@ -405,6 +405,12 @@ class DeviceBootloader {
      * @param memory Specifies which memory to query
      */
     MemoryInfo getMemoryInfo(Memory memory);
+
+    /**
+     * Checks whether User Bootloader is supported with current bootloader
+     * @returns true of User Bootloader is supported, false otherwise
+     */
+    bool isUserBootloaderSupported();
 
     /**
      * Retrieves whether current bootloader is User Bootloader (B out of A/B configuration)

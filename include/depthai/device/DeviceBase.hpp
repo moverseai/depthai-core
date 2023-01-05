@@ -374,6 +374,12 @@ class DeviceBase {
     DeviceInfo getDeviceInfo() const;
 
     /**
+     * Get device name if available
+     * @returns device name or empty string if not available
+     */
+    std::string getDeviceName();
+
+    /**
      * Get MxId of device
      *
      * @returns MxId of connected device
@@ -627,7 +633,7 @@ class DeviceBase {
     /**
      * Fetches the raw EEPROM data from User area
      *
-     * @throws std::runtime_exception if any error occured
+     * @throws std::runtime_exception if any error occurred
      * @returns Binary dump of User area EEPROM data
      */
     std::vector<std::uint8_t> readCalibrationRaw();
@@ -635,7 +641,7 @@ class DeviceBase {
     /**
      * Fetches the raw EEPROM data from Factory area
      *
-     * @throws std::runtime_exception if any error occured
+     * @throws std::runtime_exception if any error occurred
      * @returns Binary dump of Factory area EEPROM data
      */
     std::vector<std::uint8_t> readFactoryCalibrationRaw();
@@ -657,6 +663,13 @@ class DeviceBase {
      * @param random If true partial timesync requests will be performed at random intervals, otherwise at fixed intervals
      */
     void setTimesync(std::chrono::milliseconds period, int numSamples, bool random);
+
+    /**
+     * Enables or disables Timesync service on device. It keeps host and device clocks in sync.
+     *
+     * @param enable Enables or disables consistent timesyncing
+     */
+    void setTimesync(bool enable);
 
     /**
      * Explicitly closes connection to device.
