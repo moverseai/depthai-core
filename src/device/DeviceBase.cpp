@@ -905,7 +905,10 @@ std::string DeviceBase::getDeviceName() {
     }
 
     // Convert to device naming from display/product naming
-    std::transform(deviceName.begin(), deviceName.end(), deviceName.begin(), std::ptr_fun<int, int>(std::toupper));
+    // change std::ptr_fun to lambda for C++20
+    std::transform(deviceName.begin(), deviceName.end(), deviceName.begin(), [](int c) {
+        return std::toupper(c);
+        });
     std::replace(deviceName.begin(), deviceName.end(), ' ', '-');
 
     // Handle some known legacy cases
