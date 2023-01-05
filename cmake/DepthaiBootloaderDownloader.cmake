@@ -193,6 +193,7 @@ function(DepthaiBootloaderDownload)
         "${folder}/depthai-bootloader-fwp-${_version_commit_identifier}.tar.xz"
         status
     )
+    message("${_download_directory_url}/depthai-bootloader-fwp-${_version_commit_identifier}.tar.xz")
     if(${status})
         message(STATUS "\nCouldn't download depthai-bootloader-fwp.tar.xz\n")
         PrintErrorMessage(${status})

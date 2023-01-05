@@ -18,7 +18,7 @@ _generate/
 #depthai-cpp
 depthai-cpp/.vscode/
 depthai-cpp/build/
-
+out/
 #ci
 wheelhouse/
 calib*.json

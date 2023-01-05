@@ -278,7 +278,7 @@ endif()
 
 # First specify options
 option(DEPTHAI_BUILD_TESTS "Build tests" OFF)
-option(DEPTHAI_BUILD_EXAMPLES "Build examples - Requires OpenCV library to be installed" OFF)
+option(DEPTHAI_BUILD_EXAMPLES "Build examples - Requires OpenCV library to be installed" ON)
 option(DEPTHAI_BUILD_DOCS "Build documentation - requires doxygen to be installed" OFF)
 option(DEPTHAI_OPENCV_SUPPORT "Enable optional OpenCV support" ON)
 

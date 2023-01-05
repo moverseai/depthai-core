@@ -18,6 +18,7 @@
 // Additions
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/fmt/chrono.h"
+#include "utility/spdlog-fmt.hpp"
 
 namespace dai {
 

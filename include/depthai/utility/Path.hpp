@@ -115,27 +115,27 @@ class Path {
      */
     std::string string() const;
 
-    #if defined(__cpp_lib_char8_t)
-    /**
-     * @brief Get path in utf-8.
-     *
-     *        Will throw exception if there is no valid conversion.
-     *
-     * @return std::u8string in utf-8
-     */
-    std::u8string u8string() const {
-        return std::filesystem::path(_nativePath).u8string();
-    }
-    #else
-    /**
-     * @brief Get path in utf-8.
-     *
-     *        Will throw exception if there is no valid conversion.
-     *
-     * @return std::string in utf-8
-     */
+    //#if defined(__cpp_lib_char8_t)
+    ///**
+    // * @brief Get path in utf-8.
+    // *
+    // *        Will throw exception if there is no valid conversion.
+    // *
+    // * @return std::u8string in utf-8
+    // */
+    //std::u8string u8string() const {
+    //    return std::filesystem::path(_nativePath).u8string();
+    //}
+    //#else
+    ///**
+    // * @brief Get path in utf-8.
+    // *
+    // *        Will throw exception if there is no valid conversion.
+    // *
+    // * @return std::string in utf-8
+    // */
     std::string u8string() const;
-    #endif
+    //#endif
 #else
     /**
      * @brief Get path in native-encoding string; no conversion.

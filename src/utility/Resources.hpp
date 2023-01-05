@@ -15,6 +15,9 @@
 
 namespace dai {
 
+#define DEPTHAI_DEVICE_VERSION "a555263a9dbff1166088bcb758ab4306dca9ae1a"
+#define DEPTHAI_RESOURCE_COMPILED_BINARIES
+
 class Resources {
     // private constructor
     Resources();

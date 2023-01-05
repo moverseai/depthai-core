@@ -217,6 +217,9 @@ function(DepthaiDownload)
         "${folder}/depthai-device-fwp-${_version_commit_identifier}.tar.xz"
         status
     )
+
+    message("${_download_directory_url}/depthai-device-fwp-${_version_commit_identifier}.tar.xz")
+
     if(${status})
         message(STATUS "\nCouldn't download depthai-device-fwp.tar.xz\n")
         PrintErrorMessage(${status})
