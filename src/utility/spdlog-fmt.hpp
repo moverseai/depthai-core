@@ -5,8 +5,6 @@
 #include "depthai/utility/Path.hpp"
 #include "depthai-shared/datatype/DatatypeEnum.hpp"
 
-#include "magic_enum.hpp"
-
 namespace dai {
 namespace utility {
 static constexpr char path_convert_err[] = "<Unicode path not convertible>";
@@ -29,6 +27,9 @@ struct fmt::formatter<dai::Path> : formatter<std::string> {
     }
 };
 
+#ifdef MOVERSE_DEPTHAI_CORE
+#include "magic_enum.hpp"
+
 template <>
 struct fmt::formatter<dai::DatatypeEnum> : fmt::formatter<std::string> {
     auto format(const dai::DatatypeEnum& type, fmt::format_context& ctx) -> decltype(ctx.out()) {
@@ -41,3 +42,4 @@ struct fmt::formatter<dai::DatatypeEnum> : fmt::formatter<std::string> {
         return formatter<std::string>::format(output, ctx);
     }
 };
+#endif
