@@ -4,7 +4,7 @@
 #include <memory>
 
 // project
-#include "build/version.hpp"
+#include "config/version.hpp"
 #include "utility/Environment.hpp"
 #include "utility/Resources.hpp"
 
