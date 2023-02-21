@@ -1,4 +1,4 @@
-#include <cmrc/cmrc.hpp>
+        #include <cmrc/cmrc.hpp>
 #include <map>
 #include <utility>
 
@@ -7,10 +7,10 @@ namespace depthai {
 
 namespace res_chars {
 // These are the files which are available in this resource library
-// Pointers to E:/Code/MOVERSE/depthai-core/out/build/x64-Debug/resources/depthai-device-fwp-a555263a9dbff1166088bcb758ab4306dca9ae1a.tar.xz
-extern const char* const f_461f_depthai_device_fwp_a555263a9dbff1166088bcb758ab4306dca9ae1a_tar_xz_begin;
-extern const char* const f_461f_depthai_device_fwp_a555263a9dbff1166088bcb758ab4306dca9ae1a_tar_xz_end;
-// Pointers to E:/Code/MOVERSE/depthai-core/out/build/x64-Debug/resources/depthai-bootloader-fwp-0.0.21.tar.xz
+// Pointers to E:/Code/MOVERSE/depthai-core/out/build/x64-Release/resources/depthai-device-fwp-adbcc016c8bd5a5580a26d8b6250f77160203666.tar.xz
+extern const char* const f_5e4f_depthai_device_fwp_adbcc016c8bd5a5580a26d8b6250f77160203666_tar_xz_begin;
+extern const char* const f_5e4f_depthai_device_fwp_adbcc016c8bd5a5580a26d8b6250f77160203666_tar_xz_end;
+// Pointers to E:/Code/MOVERSE/depthai-core/out/build/x64-Release/resources/depthai-bootloader-fwp-0.0.21.tar.xz
 extern const char* const f_e4b2_depthai_bootloader_fwp_0_0_21_tar_xz_begin;
 extern const char* const f_e4b2_depthai_bootloader_fwp_0_0_21_tar_xz_end;
 }
@@ -30,11 +30,11 @@ get_root_index() {
     (void)root_directory_dir;
     
     root_index.emplace(
-        "depthai-device-fwp-a555263a9dbff1166088bcb758ab4306dca9ae1a.tar.xz",
+        "depthai-device-fwp-adbcc016c8bd5a5580a26d8b6250f77160203666.tar.xz",
         root_directory_dir.directory.add_file(
-            "depthai-device-fwp-a555263a9dbff1166088bcb758ab4306dca9ae1a.tar.xz",
-            res_chars::f_461f_depthai_device_fwp_a555263a9dbff1166088bcb758ab4306dca9ae1a_tar_xz_begin,
-            res_chars::f_461f_depthai_device_fwp_a555263a9dbff1166088bcb758ab4306dca9ae1a_tar_xz_end
+            "depthai-device-fwp-adbcc016c8bd5a5580a26d8b6250f77160203666.tar.xz",
+            res_chars::f_5e4f_depthai_device_fwp_adbcc016c8bd5a5580a26d8b6250f77160203666_tar_xz_begin,
+            res_chars::f_5e4f_depthai_device_fwp_adbcc016c8bd5a5580a26d8b6250f77160203666_tar_xz_end
         )
     );
     root_index.emplace(
