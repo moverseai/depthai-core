@@ -21,8 +21,10 @@
 #include "utility/spdlog-fmt.hpp"
 
 // libraries
+#include "XLink/XLink.h"
 #include "spdlog/fmt/chrono.h"
 #include "spdlog/spdlog.h"
+#include "utility/Logging.hpp"
 #include "zlib.h"
 
 // Resource compiled assets (cmds)
@@ -144,7 +146,7 @@ std::vector<uint8_t> DeviceBootloader::createDepthaiApplicationPackage(
         deviceFirmware = std::move(compressBuffer);
 
         auto diff = duration_cast<milliseconds>(steady_clock::now() - t1);
-        spdlog::debug("Compressed firmware for Dephai Application Package. Took {}, size reduced from {:.2f}MiB to {:.2f}MiB",
+        logger::debug("Compressed firmware for Dephai Application Package. Took {}, size reduced from {:.2f}MiB to {:.2f}MiB",
                       diff,
                       prevSize / (1024.0f * 1024.0f),
                       deviceFirmware.size() / (1024.0f * 1024.0f));
@@ -218,11 +220,11 @@ std::vector<uint8_t> DeviceBootloader::createDepthaiApplicationPackage(
     for(std::size_t i = 0; i < assetStorage.size(); i++) fwPackage[assetStorageSection->offset + i] = assetStorage[i];
 
     // Debug
-    if(spdlog::get_level() == spdlog::level::debug) {
+    if(logger::get_level() == spdlog::level::debug) {
         SBR_SECTION* cur = &sbr.sections[0];
-        spdlog::debug("DepthAI Application Package");
+        logger::debug("DepthAI Application Package");
         for(; cur != lastSection + 1; cur++) {
-            spdlog::debug("{}, {}B, {}, {}, {}, {}", cur->name, cur->size, cur->offset, cur->checksum, cur->type, cur->flags);
+            logger::debug("{}, {}B, {}, {}, {}, {}", cur->name, cur->size, cur->offset, cur->checksum, cur->type, cur->flags);
         }
     }
 
@@ -267,182 +269,44 @@ DeviceBootloader::DeviceBootloader(const DeviceInfo& devInfo, const dai::Path& p
     init(false, pathToBootloader, tl::nullopt, allowFlashingBootloader);
 }
 
-void DeviceBootloader::init(bool embeddedMvcmd, const dai::Path& pathToMvcmd, tl::optional<bootloader::Type> type, bool allowBlFlash) {
-    stream = nullptr;
-    allowFlashingBootloader = allowBlFlash;
+DeviceBootloader::DeviceBootloader(std::string nameOrDeviceId, bool allowFlashingBootloader) : deviceInfo(std::move(nameOrDeviceId)) {
+    init(true, {}, tl::nullopt, allowFlashingBootloader);
+}
 
-    bootloaderType = type.value_or(DEFAULT_TYPE);
-
-    // Init device (if bootloader, handle correctly - issue USB boot command)
-    if(deviceInfo.state == X_LINK_UNBOOTED) {
-        // Unbooted device found, boot to BOOTLOADER and connect with XLinkConnection constructor
-        if(embeddedMvcmd) {
-            connection = std::make_shared<XLinkConnection>(deviceInfo, getEmbeddedBootloaderBinary(bootloaderType), X_LINK_BOOTLOADER);
-        } else {
-            connection = std::make_shared<XLinkConnection>(deviceInfo, pathToMvcmd, X_LINK_BOOTLOADER);
-        }
-
-        // prepare bootloader stream
-        stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
-
-        // Retrieve bootloader version
-        version = requestVersion();
-
-        // Device wasn't already in bootloader, that means that embedded bootloader is booted
-        isEmbedded = true;
-    } else if(deviceInfo.state == X_LINK_BOOTLOADER || deviceInfo.state == X_LINK_FLASH_BOOTED) {
-        // If device is in flash booted state, reset to bootloader and then continue by booting appropriate FW
-        if(deviceInfo.state == X_LINK_FLASH_BOOTED) {
-            // Boot bootloader and set current deviceInfo to new device state
-            deviceInfo = XLinkConnection::bootBootloader(deviceInfo);
-        }
-
-        // In this case boot specified bootloader only if current bootloader isn't of correct type
-        // Check version first, if >= 0.0.12 then check type and then either bootmemory to correct BL or continue as is
-
-        // Device already in bootloader mode.
-        // Connect without booting
-        connection = std::make_shared<XLinkConnection>(deviceInfo, X_LINK_BOOTLOADER);
-
-        // If type is specified, try to boot into that BL type
-        stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
-
-        // Retrieve bootloader version
-        version = requestVersion();
-        if(version >= Version(0, 0, 12)) {
-            // If version is adequate, do an in memory boot.
-
-            // Send request for bootloader type
-            if(!sendRequest(Request::GetBootloaderType{})) {
-                throw std::runtime_error("Error trying to connect to device");
-            }
-            // Receive response
-            Response::BootloaderType runningBootloaderType;
-            if(!receiveResponse(runningBootloaderType)) throw std::runtime_error("Error trying to connect to device");
-
-            // Modify actual bootloader type
-            bootloaderType = runningBootloaderType.type;
-
-            Type desiredBootloaderType = type.value_or(bootloaderType);
-
-            // If not correct type OR if allowFlashingBootloader is set, then boot internal (latest) bootloader of correct type
-            if((desiredBootloaderType != bootloaderType) || allowFlashingBootloader) {
-                // prepare watchdog thread, which will keep device alive
-                std::atomic<bool> wdRunning{true};
-                std::thread wd = std::thread([&]() {
-                    // prepare watchdog thread
-                    try {
-                        // constructor can throw in rare+quick start/stop scenarios because
-                        // the connection is close() eg. by DeviceBootloader::close()
-                        XLinkStream stream(connection, bootloader::XLINK_CHANNEL_WATCHDOG, 64);
-                        std::vector<uint8_t> watchdogKeepalive = {0, 0, 0, 0};
-                        while(wdRunning) {
-                            try {
-                                stream.write(watchdogKeepalive);
-                            } catch(const std::exception&) {
-                                break;
-                            }
-                            // Ping with a period half of that of the watchdog timeout
-                            std::this_thread::sleep_for(bootloader::XLINK_WATCHDOG_TIMEOUT / 2);
-                        }
-                    } catch(const std::exception&) {
-                        // ignore, probably invalid connection or stream
-                    }
-                });
-
-                // Send request to boot firmware directly from bootloader
-                Request::BootMemory bootMemory;
-                auto binary = getEmbeddedBootloaderBinary(desiredBootloaderType);
-                bootMemory.totalSize = static_cast<uint32_t>(binary.size());
-                bootMemory.numPackets = ((static_cast<uint32_t>(binary.size()) - 1) / bootloader::XLINK_STREAM_MAX_SIZE) + 1;
-                if(!sendRequest(bootMemory)) {
-                    throw std::runtime_error("Error trying to connect to device");
-                }
-
-                // After that send numPackets of data
-                stream->writeSplit(binary.data(), binary.size(), bootloader::XLINK_STREAM_MAX_SIZE);
-                // Close existing stream first
-                stream = nullptr;
-                // Stop watchdog
-                wdRunning = false;
-                wd.join();
-                // Close connection
-                connection->close();
-
-                // Now reconnect
-                connection = std::make_shared<XLinkConnection>(deviceInfo, X_LINK_BOOTLOADER);
-
-                // prepare new bootloader stream
-                stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
-
-                // Retrieve bootloader version
-                version = requestVersion();
-
-                // The type of bootloader is now 'desiredBootloaderType'
-                bootloaderType = desiredBootloaderType;
-
-                // Embedded bootloader was used to boot, set to true
-                isEmbedded = true;
-            } else {
-                // Just connected to existing bootloader on device. Set embedded to false
-                isEmbedded = false;
-            }
-
-        } else {
-            // If version isn't adequate to do an in memory boot - do regular Bootloader -> USB ROM -> Boot transition.
-            Type desiredBootloaderType = type.value_or(Type::USB);
-
-            // If not correct type OR if allowFlashingBootloader is set, then boot internal (latest) bootloader of correct type
-            if((desiredBootloaderType != Type::USB) || allowFlashingBootloader) {
-                // Send request to jump to USB bootloader
-                // Boot into USB ROM BOOTLOADER NOW
-                if(!sendRequest(Request::UsbRomBoot{})) {
-                    throw std::runtime_error("Error trying to connect to device");
-                }
-                // Close existing stream first
-                stream = nullptr;
-                // Close connection
-                connection->close();
-
-                // Now reconnect
-                // Unbooted device found, boot to BOOTLOADER and connect with XLinkConnection constructor
-                if(embeddedMvcmd) {
-                    connection = std::make_shared<XLinkConnection>(deviceInfo, getEmbeddedBootloaderBinary(desiredBootloaderType), X_LINK_BOOTLOADER);
-                } else {
-                    connection = std::make_shared<XLinkConnection>(deviceInfo, pathToMvcmd, X_LINK_BOOTLOADER);
-                }
-
-                // prepare bootloader stream
-                stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
-
-                // Retrieve bootloader version
-                version = requestVersion();
-
-                // The type of bootloader is now 'desiredBootloaderType'
-                bootloaderType = desiredBootloaderType;
-
-                // Embedded bootloader was used to boot, set to true
-                isEmbedded = true;
-
-            } else {
-                bootloaderType = dai::bootloader::Type::USB;
-
-                // Just connected to existing bootloader on device. Set embedded to false
-                isEmbedded = false;
-            }
-        }
-
-    } else {
-        throw std::runtime_error("Device not in UNBOOTED, BOOTLOADER or FLASH_BOOTED state");
+void DeviceBootloader::createWatchdog() {
+    if(monitorThread.joinable() || watchdogThread.joinable()) {
+        throw std::runtime_error("Watchdog already created. Destroy it first.");
     }
-
-    deviceInfo.state = X_LINK_BOOTLOADER;
-
+    watchdogRunning = true;
     // Specify "last" ping time (5s in the future, for some grace time)
     {
         std::unique_lock<std::mutex> lock(lastWatchdogPingTimeMtx);
         lastWatchdogPingTime = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     }
+    // Create monitor thread
+    monitorThread = std::thread([this]() {
+        while(watchdogRunning) {
+            // Ping with a period half of that of the watchdog timeout
+            std::this_thread::sleep_for(bootloader::XLINK_WATCHDOG_TIMEOUT);
+            // Check if wd was pinged in the specified watchdogTimeout time.
+            decltype(lastWatchdogPingTime) prevPingTime;
+            {
+                std::unique_lock<std::mutex> lock(lastWatchdogPingTimeMtx);
+                prevPingTime = lastWatchdogPingTime;
+            }
+            // Recheck if watchdogRunning wasn't already closed and close if more than twice of WD passed
+            // Bump checking thread to not cause spurious warnings/closes
+            std::chrono::milliseconds watchdogTimeout = std::chrono::milliseconds(3000);
+            if(watchdogRunning && std::chrono::steady_clock::now() - prevPingTime > watchdogTimeout * 2) {
+                logger::warn("Monitor thread (device: {} [{}]) - ping was missed, closing the device connection", deviceInfo.mxid, deviceInfo.name);
+                // ping was missed, reset the device
+                watchdogRunning = false;
+                // close the underlying connection
+                connection->close();
+            }
+        }
+    });
+
     // prepare watchdog thread, which will keep device alive
     watchdogThread = std::thread([this]() {
         try {
@@ -480,33 +344,200 @@ void DeviceBootloader::init(bool embeddedMvcmd, const dai::Path& pathToMvcmd, tl
         // Sleep a bit, so device isn't available anymore
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     });
+}
 
-    // Start monitor thread for host - makes sure that device is responding to pings, otherwise it disconnects
-    monitorThread = std::thread([this]() {
-        while(watchdogRunning) {
-            // Ping with a period half of that of the watchdog timeout
-            std::this_thread::sleep_for(bootloader::XLINK_WATCHDOG_TIMEOUT);
-            // Check if wd was pinged in the specified watchdogTimeout time.
-            decltype(lastWatchdogPingTime) prevPingTime;
-            {
-                std::unique_lock<std::mutex> lock(lastWatchdogPingTimeMtx);
-                prevPingTime = lastWatchdogPingTime;
-            }
-            // Recheck if watchdogRunning wasn't already closed and close if more than twice of WD passed
-            if(watchdogRunning && std::chrono::steady_clock::now() - prevPingTime > bootloader::XLINK_WATCHDOG_TIMEOUT * 2) {
-                spdlog::warn("Monitor thread (device: {} [{}]) - ping was missed, closing the device connection", deviceInfo.mxid, deviceInfo.name);
-                // ping was missed, reset the device
-                watchdogRunning = false;
-                // close the underlying connection
-                connection->close();
-            }
+void DeviceBootloader::destroyWatchdog() {
+    watchdogRunning = false;
+    // Check & join previous thread
+    if(watchdogThread.joinable()) watchdogThread.join();
+    // Check & join previous thread
+    if(monitorThread.joinable()) monitorThread.join();
+}
+
+void DeviceBootloader::init(bool embeddedMvcmd, const dai::Path& pathToMvcmd, tl::optional<bootloader::Type> type, bool allowBlFlash) {
+    stream = nullptr;
+    allowFlashingBootloader = allowBlFlash;
+
+    bootloaderType = type.value_or(DEFAULT_TYPE);
+
+    // If deviceInfo isn't fully specified (eg ANY_STATE, etc...), but id or name is - try finding it first
+    if((deviceInfo.state == X_LINK_ANY_STATE || deviceInfo.protocol == X_LINK_ANY_PROTOCOL) && (!deviceInfo.mxid.empty() || !deviceInfo.name.empty())) {
+        deviceDesc_t foundDesc;
+        auto ret = XLinkFindFirstSuitableDevice(deviceInfo.getXLinkDeviceDesc(), &foundDesc);
+        if(ret == X_LINK_SUCCESS) {
+            deviceInfo = DeviceInfo(foundDesc);
+            logger::debug("Found an actual device by given DeviceInfo: {}", deviceInfo.toString());
+        } else {
+            throw std::runtime_error("Specified device not found");
         }
-    });
+    }
 
-    // Bootloader device ready, check for version
-    spdlog::debug("Connected bootloader version {}", version.toString());
-    if(getEmbeddedBootloaderVersion() > version) {
-        spdlog::info("New bootloader version available. Device has: {}, available: {}", version.toString(), getEmbeddedBootloaderVersion().toString());
+    // Below can throw - make sure to gracefully exit threads
+    try {
+        // Init device (if bootloader, handle correctly - issue USB boot command)
+        if(deviceInfo.state == X_LINK_UNBOOTED) {
+            // Unbooted device found, boot to BOOTLOADER and connect with XLinkConnection constructor
+            if(embeddedMvcmd) {
+                connection = std::make_shared<XLinkConnection>(deviceInfo, getEmbeddedBootloaderBinary(bootloaderType), X_LINK_BOOTLOADER);
+            } else {
+                connection = std::make_shared<XLinkConnection>(deviceInfo, pathToMvcmd, X_LINK_BOOTLOADER);
+            }
+
+            // prepare bootloader stream
+            stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
+
+            // Prepare monitor & wd threads in case things go down
+            createWatchdog();
+
+            // Retrieve bootloader version
+            version = requestVersion();
+
+            // Device wasn't already in bootloader, that means that embedded bootloader is booted
+            isEmbedded = true;
+        } else if(deviceInfo.state == X_LINK_BOOTLOADER || deviceInfo.state == X_LINK_FLASH_BOOTED) {
+            // If device is in flash booted state, reset to bootloader and then continue by booting appropriate FW
+            if(deviceInfo.state == X_LINK_FLASH_BOOTED) {
+                // Boot bootloader and set current deviceInfo to new device state
+                deviceInfo = XLinkConnection::bootBootloader(deviceInfo);
+            }
+
+            // In this case boot specified bootloader only if current bootloader isn't of correct type
+            // Check version first, if >= 0.0.12 then check type and then either bootmemory to correct BL or continue as is
+
+            // Device already in bootloader mode.
+            // Connect without booting
+            connection = std::make_shared<XLinkConnection>(deviceInfo, X_LINK_BOOTLOADER);
+
+            // Prepare monitor & wd threads in case things go down
+            createWatchdog();
+
+            // If type is specified, try to boot into that BL type
+            stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
+
+            // Retrieve bootloader version
+            version = requestVersion();
+            if(version >= Version(0, 0, 12)) {
+                // If version is adequate, do an in memory boot.
+
+                // Send request for bootloader type
+                if(!sendRequest(Request::GetBootloaderType{})) {
+                    throw std::runtime_error("Error trying to connect to device");
+                }
+                // Receive response
+                Response::BootloaderType runningBootloaderType;
+                if(!receiveResponse(runningBootloaderType)) throw std::runtime_error("Error trying to connect to device");
+
+                // Modify actual bootloader type
+                bootloaderType = runningBootloaderType.type;
+
+                Type desiredBootloaderType = type.value_or(bootloaderType);
+
+                // If not correct type OR if allowFlashingBootloader is set, then boot internal (latest) bootloader of correct type
+                if((desiredBootloaderType != bootloaderType) || allowFlashingBootloader) {
+                    // Send request to boot firmware directly from bootloader
+                    Request::BootMemory bootMemory;
+                    auto binary = getEmbeddedBootloaderBinary(desiredBootloaderType);
+                    bootMemory.totalSize = static_cast<uint32_t>(binary.size());
+                    bootMemory.numPackets = ((static_cast<uint32_t>(binary.size()) - 1) / bootloader::XLINK_STREAM_MAX_SIZE) + 1;
+                    if(!sendRequest(bootMemory)) {
+                        throw std::runtime_error("Error trying to connect to device");
+                    }
+
+                    // After that send numPackets of data
+                    stream->writeSplit(binary.data(), binary.size(), bootloader::XLINK_STREAM_MAX_SIZE);
+                    // Close existing stream first
+                    stream = nullptr;
+                    // Stop watchdog
+                    destroyWatchdog();
+                    // Close connection
+                    connection->close();
+
+                    // Now reconnect
+                    connection = std::make_shared<XLinkConnection>(deviceInfo, X_LINK_BOOTLOADER);
+
+                    // Recreate watchdog - monitor & wd threads in case things go down
+                    createWatchdog();
+
+                    // prepare new bootloader stream
+                    stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
+
+                    // Retrieve bootloader version
+                    version = requestVersion();
+
+                    // The type of bootloader is now 'desiredBootloaderType'
+                    bootloaderType = desiredBootloaderType;
+
+                    // Embedded bootloader was used to boot, set to true
+                    isEmbedded = true;
+                } else {
+                    // Just connected to existing bootloader on device. Set embedded to false
+                    isEmbedded = false;
+                }
+
+            } else {
+                // If version isn't adequate to do an in memory boot - do regular Bootloader -> USB ROM -> Boot transition.
+                Type desiredBootloaderType = type.value_or(Type::USB);
+
+                // If not correct type OR if allowFlashingBootloader is set, then boot internal (latest) bootloader of correct type
+                if((desiredBootloaderType != Type::USB) || allowFlashingBootloader) {
+                    // Send request to jump to USB bootloader
+                    // Boot into USB ROM BOOTLOADER NOW
+                    if(!sendRequest(Request::UsbRomBoot{})) {
+                        throw std::runtime_error("Error trying to connect to device");
+                    }
+                    // Close existing stream first
+                    stream = nullptr;
+                    // Close connection
+                    connection->close();
+
+                    // Now reconnect
+                    // Unbooted device found, boot to BOOTLOADER and connect with XLinkConnection constructor
+                    if(embeddedMvcmd) {
+                        connection = std::make_shared<XLinkConnection>(deviceInfo, getEmbeddedBootloaderBinary(desiredBootloaderType), X_LINK_BOOTLOADER);
+                    } else {
+                        connection = std::make_shared<XLinkConnection>(deviceInfo, pathToMvcmd, X_LINK_BOOTLOADER);
+                    }
+
+                    // Prepare monitor & wd threads in case things go down
+                    createWatchdog();
+
+                    // prepare bootloader stream
+                    stream = std::make_unique<XLinkStream>(connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
+
+                    // Retrieve bootloader version
+                    version = requestVersion();
+
+                    // The type of bootloader is now 'desiredBootloaderType'
+                    bootloaderType = desiredBootloaderType;
+
+                    // Embedded bootloader was used to boot, set to true
+                    isEmbedded = true;
+
+                } else {
+                    bootloaderType = dai::bootloader::Type::USB;
+
+                    // Just connected to existing bootloader on device. Set embedded to false
+                    isEmbedded = false;
+                }
+            }
+
+        } else {
+            throw std::runtime_error("Device not in UNBOOTED, BOOTLOADER or FLASH_BOOTED state");
+        }
+
+        deviceInfo.state = X_LINK_BOOTLOADER;
+
+        // Bootloader device ready, check for version
+        logger::debug("Connected bootloader version {}", version.toString());
+        if(getEmbeddedBootloaderVersion() > version) {
+            logger::info("New bootloader version available. Device has: {}, available: {}", version.toString(), getEmbeddedBootloaderVersion().toString());
+        }
+
+    } catch(...) {
+        // catchall, to properly close the threads as we are in constructor context
+        destroyWatchdog();
+        // Rethrow original exception
+        throw;
     }
 }
 
@@ -516,7 +547,7 @@ void DeviceBootloader::close() {
 
     using namespace std::chrono;
     auto t1 = steady_clock::now();
-    spdlog::debug("DeviceBootloader about to be closed...");
+    logger::debug("DeviceBootloader about to be closed...");
 
     // Close connection first; causes Xlink internal calls to unblock semaphore waits and
     // return error codes, which then allows queues to unblock
@@ -525,27 +556,22 @@ void DeviceBootloader::close() {
     // invalid memory, etc. which hard crashes main app
     connection->close();
 
-    // Stop watchdog
-    watchdogRunning = false;
-
-    // Stop watchdog first (this resets and waits for link to fall down)
-    if(watchdogThread.joinable()) watchdogThread.join();
-    // At the end stop the monitor thread
-    if(monitorThread.joinable()) monitorThread.join();
+    // destroy Watchdog
+    destroyWatchdog();
 
     // Close stream
     // BUGBUG investigate ownership; can another thread accessing this at the same time?
     stream = nullptr;
 
-    spdlog::debug("DeviceBootloader closed, {}", duration_cast<milliseconds>(steady_clock::now() - t1).count());
+    logger::debug("DeviceBootloader closed, {}", duration_cast<milliseconds>(steady_clock::now() - t1).count());
 }
 
+// This function is thread-unsafe. The idea of "isClosed" is ephemerial and
+// is invalid even within this function between the evaluation of the logical OR.
+// The calculated boolean and then then return by value continue to degrade in
+// validity to the caller
 bool DeviceBootloader::isClosed() const {
     return closed || !watchdogRunning;
-}
-
-void DeviceBootloader::checkClosed() const {
-    if(isClosed()) throw std::invalid_argument("DeviceBootloader already closed or disconnected");
 }
 
 DeviceBootloader::~DeviceBootloader() {
@@ -644,7 +670,7 @@ DeviceBootloader::ApplicationInfo DeviceBootloader::readApplicationInfo(Memory m
 DeviceBootloader::MemoryInfo DeviceBootloader::getMemoryInfo(Memory memory) {
     if(memory == Memory::EMMC && bootloaderType == Type::USB) {
         // Warn, as result of "no emmc" might be deceiving
-        spdlog::warn("USB Bootloader type does NOT support eMMC");
+        logger::warn("USB Bootloader type does NOT support eMMC");
     }
 
     // Send request to retrieve bootloader version
@@ -699,9 +725,10 @@ std::tuple<bool, std::string> DeviceBootloader::flashDepthaiApplicationPackage(s
                                                                                std::vector<uint8_t> package,
                                                                                Memory memory) {
     // Bug in NETWORK bootloader in version 0.0.12 < 0.0.14 - flashing can cause a soft brick
-    auto version = getVersion();
-    if(bootloaderType == Type::NETWORK && version < Version(0, 0, 14)) {
-        throw std::invalid_argument("Network bootloader requires version 0.0.14 or higher to flash applications. Current version: " + version.toString());
+    auto bootloaderVersion = getVersion();
+    if(bootloaderType == Type::NETWORK && bootloaderVersion < Version(0, 0, 14)) {
+        throw std::invalid_argument("Network bootloader requires version 0.0.14 or higher to flash applications. Current version: "
+                                    + bootloaderVersion.toString());
     }
 
     std::tuple<bool, std::string> ret;
@@ -767,7 +794,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashDepthaiApplicationPackage(s
         try {
             configJson = readConfigData();
         } catch(const std::exception& ex) {
-            spdlog::debug("Error while trying to read existing bootloader configuration: {}", ex.what());
+            logger::debug("Error while trying to read existing bootloader configuration: {}", ex.what());
         }
         // Set the following field 'appMem' (in forward/backward compat manner)
         configJson["appMem"] = finalAppMem;
@@ -776,12 +803,12 @@ std::tuple<bool, std::string> DeviceBootloader::flashDepthaiApplicationPackage(s
         std::string errorMsg;
         std::tie(success, errorMsg) = flashConfigData(configJson);
         if(success) {
-            spdlog::debug("Success flashing the appMem configuration to '{}'", static_cast<std::int32_t>(finalAppMem));
+            logger::debug("Success flashing the appMem configuration to '{}'", static_cast<std::int32_t>(finalAppMem));
         } else {
             throw std::runtime_error(errorMsg);
         }
     } catch(const std::exception& ex) {
-        spdlog::debug("Error while trying to specify final appMem configuration: {}", ex.what());
+        logger::debug("Error while trying to specify final appMem configuration: {}", ex.what());
     }
 
     return ret;
@@ -961,7 +988,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashUserBootloader(std::functio
     try {
         configJson = readConfigData();
     } catch(const std::exception& ex) {
-        spdlog::debug("Error while trying to read existing bootloader configuration: {}", ex.what());
+        logger::debug("Error while trying to read existing bootloader configuration: {}", ex.what());
     }
     // Set the userBl fields (in forward/backward compat manner)
     const auto userBlSize = static_cast<std::uint32_t>(package.size());
@@ -973,7 +1000,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashUserBootloader(std::functio
     std::string errorMsg;
     std::tie(success, errorMsg) = flashConfigData(configJson);
     if(success) {
-        spdlog::debug("Success flashing the configuration userBlSize to '{}' and userBlChecksum to '{}'", userBlSize, userBlChecksum);
+        logger::debug("Success flashing the configuration userBlSize to '{}' and userBlChecksum to '{}'", userBlSize, userBlChecksum);
     } else {
         throw std::runtime_error(errorMsg);
     }
@@ -1083,8 +1110,8 @@ std::tuple<bool, std::string> DeviceBootloader::flashCustom(
     std::vector<uint8_t> optFileData;
     if(!filename.empty()) {
         // Read file into memory first
-        std::ifstream stream(filename, std::ios::in | std::ios::binary);
-        optFileData = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(stream), {});
+        std::ifstream optFile(filename, std::ios::in | std::ios::binary);
+        optFileData = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(optFile), {});
         data = optFileData.data();
         size = optFileData.size();
     }
@@ -1106,17 +1133,17 @@ std::tuple<bool, std::string> DeviceBootloader::flashCustom(
     result.success = 0;  // TODO remove these inits after fix https://github.com/luxonis/depthai-bootloader-shared/issues/4
     result.errorMsg[0] = 0;
     do {
-        std::vector<uint8_t> data;
-        if(!receiveResponseData(data)) return {false, "Couldn't receive bootloader response"};
+        std::vector<uint8_t> responseData;
+        if(!receiveResponseData(responseData)) return {false, "Couldn't receive bootloader response"};
 
         Response::FlashStatusUpdate update;
-        if(parseResponse(data, update)) {
+        if(parseResponse(responseData, update)) {
             // if progress callback is set
             if(progressCb != nullptr) {
                 progressCb(update.progress);
             }
             // if flash complete response arrived, break from while loop
-        } else if(parseResponse(data, result)) {
+        } else if(parseResponse(responseData, result)) {
             break;
         } else {
             // Unknown response, shouldn't happen
