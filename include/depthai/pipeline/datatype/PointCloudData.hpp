@@ -5,7 +5,7 @@
 
 #include "depthai-shared/common/Point3f.hpp"
 #include "depthai-shared/datatype/RawPointCloudData.hpp"
-#include "depthai/build/config.hpp"
+#include "depthai/config/config.hpp"
 #include "depthai/pipeline/datatype/Buffer.hpp"
 
 // optional

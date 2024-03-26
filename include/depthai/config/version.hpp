@@ -4,20 +4,20 @@
  */
 #pragma once
 
-namespace dai
-{
-namespace build
-{
-    constexpr static const char* VERSION = "2.19.1";
-    constexpr static const int VERSION_MAJOR = 2;
-    constexpr static const int VERSION_MINOR = 19;
-    constexpr static const int VERSION_PATCH = 1;
+namespace dai {
+namespace build {
+constexpr static const char* VERSION = "2.19.1";
+constexpr static const int VERSION_MAJOR = 2;
+constexpr static const int VERSION_MINOR = 19;
+constexpr static const int VERSION_PATCH = 1;
 
-    constexpr static const char* COMMIT = "428727bc5bf8c547ca448c3440cb83fbf174e874";
-    constexpr static const char* COMMIT_DATETIME = "2023-01-05 12:58:53 +0200";
-    constexpr static const char* BUILD_DATETIME = "2023-01-26 13:57:55 +0000";
+constexpr static const char* COMMIT = "428727bc5bf8c547ca448c3440cb83fbf174e874";
+constexpr static const char* COMMIT_DATETIME = "2023-01-05 12:58:53 +0200";
+constexpr static const char* BUILD_DATETIME = "2023-01-26 13:57:55 +0000";
 
-    constexpr static const char* DEVICE_VERSION = "adbcc016c8bd5a5580a26d8b6250f77160203666";
-    constexpr static const char* BOOTLOADER_VERSION = "0.0.21";
-} // namespace build
-} // namespace dai
+constexpr static const char* DEVICE_VERSION = "adbcc016c8bd5a5580a26d8b6250f77160203666";
+constexpr static const char* BOOTLOADER_VERSION = "0.0.21";
+
+constexpr static const char* HAVE_LIBUSB_SUPPORT = "true";
+}  // namespace build
+}  // namespace dai

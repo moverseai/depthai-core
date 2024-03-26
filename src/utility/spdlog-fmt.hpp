@@ -42,4 +42,17 @@ struct fmt::formatter<dai::DatatypeEnum> : fmt::formatter<std::string> {
         return formatter<std::string>::format(output, ctx);
     }
 };
+
+// template <>
+// struct fmt::formatter<dai::CameraBoardSocket> : fmt::formatter<std::string> {
+//     auto format(const dai::CameraBoardSocket& type, fmt::format_context& ctx) -> decltype(ctx.out()) {
+//         std::string output;
+//         try {
+//             output = magic_enum::enum_name(type);
+//         } catch(const std::exception&) {
+//             output = dai::utility::path_convert_err;
+//         }
+//         return formatter<std::string>::format(output, ctx);
+//     }
+// };
 #endif
