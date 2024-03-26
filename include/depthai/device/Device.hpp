@@ -34,7 +34,7 @@ class Device : public DeviceBase {
      * @param usb2Mode (bool) Boot device using USB2 mode firmware
      */
     template <typename T, std::enable_if_t<std::is_same<T, bool>::value, bool> = true>
-    Device(const Pipeline& pipeline, T usb2Mode);
+    [[deprecated("Use constructor taking 'UsbSpeed' instead")]] Device(const Pipeline& pipeline, T usb2Mode);
 
     /**
      * Connects to any available device with a DEFAULT_SEARCH_TIME timeout.
@@ -64,7 +64,7 @@ class Device : public DeviceBase {
      * @param usb2Mode (bool) Boot device using USB2 mode firmware
      */
     template <typename T, std::enable_if_t<std::is_same<T, bool>::value, bool> = true>
-    Device(const Pipeline& pipeline, const DeviceInfo& devInfo, T usb2Mode);
+    [[deprecated("Use constructor taking 'UsbSpeed' instead")]] Device(const Pipeline& pipeline, const DeviceInfo& devInfo, T usb2Mode);
 
     /**
      * Connects to device specified by devInfo.
@@ -84,7 +84,7 @@ class Device : public DeviceBase {
 
     /**
      * Connects to any available device with a DEFAULT_SEARCH_TIME timeout.
-     * Uses OpenVINO version OpenVINO::DEFAULT_VERSION
+     * Uses OpenVINO version OpenVINO::VERSION_UNIVERSAL
      */
     Device();
 
@@ -132,7 +132,7 @@ class Device : public DeviceBase {
     /**
      * Gets an input queue corresponding to stream name. If it doesn't exist it throws. Also sets queue options
      *
-     * @param name Queue/stream name, set in XLinkOut node
+     * @param name Queue/stream name, set in XLinkIn node
      * @param maxSize Maximum number of messages in queue
      * @param blocking Queue behavior once full. True: blocking, false: overwriting of oldest messages. Default: true
      * @returns Smart pointer to DataInputQueue

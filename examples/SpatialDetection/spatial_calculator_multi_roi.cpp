@@ -31,9 +31,9 @@ int main() {
 
     // Properties
     monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
-    monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
+    monoLeft->setCamera("left");
     monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
-    monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
+    monoRight->setCamera("right");
 
     stereo->setDefaultProfilePreset(dai::node::StereoDepth::PresetMode::HIGH_DENSITY);
     stereo->setLeftRightCheck(true);
@@ -61,7 +61,7 @@ int main() {
 
     // Connect to device and start pipeline
     dai::Device device(pipeline);
-    device.setIrLaserDotProjectorBrightness(1000);
+    device.setIrLaserDotProjectorIntensity(0.7f);
 
     // Output queue will be used to get the depth frames from the outputs defined above
     auto depthQueue = device.getOutputQueue("depth", 4, false);
