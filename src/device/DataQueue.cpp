@@ -45,12 +45,12 @@ DataOutputQueue::DataOutputQueue(const std::shared_ptr<XLinkConnection> conn, co
                     std::vector<std::uint8_t> metadata;
                     DatatypeEnum type;
                     data->getRaw()->serialize(metadata, type);
-                    spdlog::trace("Received message from device ({}) - parsing time: {}, data size: {}, object type: {} object data: {}",
+                    /*spdlog::trace("Received message from device ({}) - parsing time: {}, data size: {}, object type: {} object data: {}",
                                   name,
                                   std::chrono::duration_cast<std::chrono::microseconds>(t2Parse - t1Parse),
                                   data->getRaw()->data.size(),
                                   static_cast<std::int32_t>(type),
-                                  spdlog::to_hex(metadata));
+                                  spdlog::to_hex(metadata));*/
                 }
 
                 // Add 'data' to queue
@@ -197,12 +197,12 @@ DataInputQueue::DataInputQueue(
                     std::vector<std::uint8_t> metadata;
                     DatatypeEnum type;
                     data->serialize(metadata, type);
-                    spdlog::trace("Sending message to device ({}) - serialize time: {}, data size: {}, object type: {} object data: {}",
+                    /*spdlog::trace("Sending message to device ({}) - serialize time: {}, data size: {}, object type: {} object data: {}",
                                   name,
                                   std::chrono::duration_cast<std::chrono::microseconds>(t2Parse - t1Parse),
                                   data->data.size(),
                                   type,
-                                  spdlog::to_hex(metadata));
+                                  spdlog::to_hex(metadata));*/
                 }
 
                 // Blocking

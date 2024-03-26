@@ -2,8 +2,8 @@
 
 #include <spdlog/fmt/fmt.h>
 
-#include "depthai/utility/Path.hpp"
 #include "depthai-shared/datatype/DatatypeEnum.hpp"
+#include "depthai/utility/Path.hpp"
 
 namespace dai {
 namespace utility {
@@ -28,7 +28,7 @@ struct fmt::formatter<dai::Path> : formatter<std::string> {
 };
 
 #ifdef MOVERSE_DEPTHAI_CORE
-#include "magic_enum.hpp"
+    #include "magic_enum.hpp"
 
 template <>
 struct fmt::formatter<dai::DatatypeEnum> : fmt::formatter<std::string> {

@@ -31,3 +31,7 @@ calib*.json
 
 # clangd cache
 .cache/
+
+*.obj
+*.sarif
+*.xml
