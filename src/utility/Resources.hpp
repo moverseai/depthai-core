@@ -1,11 +1,11 @@
 #pragma once
 
-#include <mutex>
-#include <vector>
-#include <unordered_map>
-#include <string>
 #include <cstdint>
+#include <mutex>
+#include <string>
 #include <thread>
+#include <unordered_map>
+#include <vector>
 
 // project
 #include <depthai/device/Device.hpp>
@@ -15,7 +15,7 @@
 
 namespace dai {
 
-#define DEPTHAI_DEVICE_VERSION "adbcc016c8bd5a5580a26d8b6250f77160203666"
+#define DEPTHAI_DEVICE_VERSION "7665aed8712bb941958660a0103868908726eb56"
 #define DEPTHAI_RESOURCE_COMPILED_BINARIES
 
 class Resources {
@@ -35,7 +35,7 @@ class Resources {
     bool readyBootloader;
     std::unordered_map<std::string, std::vector<std::uint8_t>> resourceMapBootloader;
 
-public:
+   public:
     static Resources& getInstance();
     Resources(Resources const&) = delete;
     void operator=(Resources const&) = delete;
@@ -44,7 +44,6 @@ public:
     std::vector<std::uint8_t> getDeviceFirmware(bool usb2Mode, OpenVINO::Version version = OpenVINO::VERSION_UNIVERSAL) const;
     std::vector<std::uint8_t> getDeviceFirmware(Device::Config config, dai::Path pathToMvcmd = {}) const;
     std::vector<std::uint8_t> getBootloaderFirmware(DeviceBootloader::Type type = DeviceBootloader::Type::USB) const;
-
 };
 
-} // namespace dai
+}  // namespace dai

@@ -21,7 +21,7 @@
 
 namespace dai {
 
-#define DEPTHAI_BOOTLOADER_VERSION "0.0.21"
+#define DEPTHAI_BOOTLOADER_VERSION "0.0.26"
 
 // DeviceBootloader (RAII), connects to device and maintains watchdog ...
 
