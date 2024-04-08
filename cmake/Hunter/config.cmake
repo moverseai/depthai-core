@@ -20,6 +20,11 @@ hunter_config(
 )
 
 hunter_config(
+    tiff
+    VERSION "v4.0.2-p5"
+)
+
+hunter_config(
     spdlog
     VERSION "1.8.2"
     URL "https://github.com/gabime/spdlog/archive/v1.8.2.tar.gz"
