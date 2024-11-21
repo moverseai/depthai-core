@@ -22,6 +22,15 @@ else()
         hunter_add_package(Backward)
     endif()
     hunter_add_package(libnop)
+    if(DEPTHAI_PCL_SUPPORT)
+        hunter_add_package(jsoncpp)
+    endif()
+
+    if(DEPTHAI_ENABLE_CURL)
+        hunter_add_package(CURL)
+        hunter_add_package(cpr)
+    endif()
+    hunter_add_package(ghc_filesystem)
 endif()
 
 # If library was build as static, find all dependencies
@@ -51,6 +60,12 @@ if(NOT CONFIG_MODE OR (CONFIG_MODE AND NOT DEPTHAI_SHARED_LIBS))
         unset(STACK_DETAILS_AUTO_DETECT)
     endif()
 
+    # Log collection dependencies
+    if(DEPTHAI_ENABLE_CURL)
+        find_package(CURL ${_QUIET} CONFIG REQUIRED)
+        find_package(cpr ${_QUIET} CONFIG REQUIRED)
+    endif()
+    find_package(ghc_filesystem ${_QUIET} CONFIG REQUIRED)
 endif()
 
 # Add threads (c++)
@@ -76,13 +91,16 @@ endif()
 
 # OpenCV 4 - (optional, quiet always)
 find_package(OpenCV 4 QUIET CONFIG)
-
-find_package(jsoncpp QUIET)
+if(DEPTHAI_PCL_SUPPORT AND NOT TARGET JsonCpp::JsonCpp)
+    find_package(jsoncpp)
+endif()
 set(MODULE_TEMP ${CMAKE_MODULE_PATH})
 set(PREFIX_TEMP ${CMAKE_PREFIX_PATH})
 set(CMAKE_MODULE_PATH ${_DEPTHAI_MODULE_PATH_ORIGINAL})
 set(CMAKE_PREFIX_PATH ${_DEPTHAI_PREFIX_PATH_ORIGINAL})
-find_package(PCL QUIET CONFIG COMPONENTS common visualization)
+if(DEPTHAI_PCL_SUPPORT)
+    find_package(PCL CONFIG COMPONENTS common visualization)
+endif()
 set(CMAKE_MODULE_PATH ${MODULE_TEMP})
 set(CMAKE_PREFIX_PATH ${PREFIX_TEMP})
 

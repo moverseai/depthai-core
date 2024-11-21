@@ -134,6 +134,14 @@ hunter_private_data(
     LOCATION tiny_yolo_v4_blob
 )
 
+# YoloV8 resource
+hunter_private_data(
+    URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/yolov8n_coco_640x352.blob"
+    SHA1 "6b88a80ffb4267e253a89cb2b3e4e186453431b0"
+    FILE "yolov8n_coco_640x352.blob"
+    LOCATION yolov8n_blob
+)
+
 # NeuralNetwork node, mobilenet example, 5 shaves
 hunter_private_data(
     URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/mobilenet-ssd_openvino_2021.4_5shave.blob"
@@ -196,6 +204,22 @@ hunter_private_data(
     LOCATION concat_model
 )
 
+# blur model
+hunter_private_data(
+    URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/blur_simplified_openvino_2021.4_6shave.blob"
+    SHA1 "14d543bbaceffa438071f83be58ad22a07ce33ee"
+    FILE "blur_simplified_openvino_2021.4_6shave.blob"
+    LOCATION blur_model
+)
+
+# diff model
+hunter_private_data(
+    URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/diff_openvino_2022.1_6shave.blob"
+    SHA1 "fe9600e617d222f986a699f18e77e80ce2485000"
+    FILE "diff_openvino_2022.1_6shave.blob"
+    LOCATION diff_model
+)
+
 # normalization model
 hunter_private_data(
     URL "https://artifacts.luxonis.com/artifactory/luxonis-depthai-data-local/network/normalize_openvino_2021.4_4shave.blob"
@@ -203,6 +227,7 @@ hunter_private_data(
     FILE "normalize_openvino_2021.4_4shave.blob"
     LOCATION normalization_model
 )
+
 
 ## message(STATUS "Location of test1.data: ${test1_data}")
 
@@ -271,7 +296,6 @@ dai_add_example(rgb_encoding_mono_mobilenet mixed/rgb_encoding_mono_mobilenet.cp
 dai_add_example(rgb_encoding_mono_mobilenet_depth mixed/rgb_encoding_mono_mobilenet_depth.cpp ON OFF)
 dai_add_example(rgb_encoding_mobilenet mixed/rgb_encoding_mobilenet.cpp ON OFF)
 dai_add_example(multiple_devices mixed/multiple_devices.cpp OFF OFF)
-dai_add_example(frame_sync mixed/frame_sync.cpp ON OFF)
 
 target_compile_definitions(mono_depth_mobilenetssd PRIVATE BLOB_PATH="${mobilenet_blob}")
 target_compile_definitions(rgb_encoding_mono_mobilenet PRIVATE BLOB_PATH="${mobilenet_blob}")
@@ -365,8 +389,10 @@ dai_add_example(mjpeg_encoding VideoEncoder/mjpeg_encoding_example.cpp ON OFF)
 # Yolo
 dai_add_example(tiny_yolo_v4_device_side_decoding Yolo/tiny_yolo.cpp ON OFF)
 dai_add_example(tiny_yolo_v3_device_side_decoding Yolo/tiny_yolo.cpp  ON OFF)
+dai_add_example(yolo_v8_nano_device_side_decoding Yolo/yolov8_nano.cpp ON OFF)
 target_compile_definitions(tiny_yolo_v4_device_side_decoding PRIVATE BLOB_PATH="${tiny_yolo_v4_blob}")
 target_compile_definitions(tiny_yolo_v3_device_side_decoding PRIVATE BLOB_PATH="${tiny_yolo_v3_blob}")
+target_compile_definitions(yolo_v8_nano_device_side_decoding PRIVATE BLOB_PATH="${yolov8n_blob}")
 dai_add_example(apriltag AprilTag/apriltag.cpp ON OFF)
 dai_add_example(apriltag_rgb AprilTag/apriltag_rgb.cpp ON OFF)
 
@@ -386,3 +412,24 @@ dai_add_example(imu_video_synced Sync/imu_video_synced.cpp ON OFF)
 if(DEPTHAI_HAVE_PCL_SUPPORT)
     dai_add_example(visualize_pointcloud PointCloud/visualize_pointcloud.cpp ON ON)
 endif()
+
+# ImageAlign
+dai_add_example(tof_align ImageAlign/tof_align.cpp OFF OFF)
+dai_add_example(image_align ImageAlign/image_align.cpp ON OFF)
+dai_add_example(thermal_align ImageAlign/thermal_align.cpp OFF OFF)
+dai_add_example(depth_align ImageAlign/depth_align.cpp ON OFF)
+
+# Cast
+dai_add_example(cast_blur Cast/cast_blur.cpp ON OFF)
+target_compile_definitions(cast_blur PRIVATE BLOB_PATH="${blur_model}")
+dai_add_example(cast_concat Cast/cast_concat.cpp ON OFF)
+target_compile_definitions(cast_concat PRIVATE BLOB_PATH="${concat_model}")
+dai_add_example(cast_diff Cast/cast_diff.cpp ON OFF)
+target_compile_definitions(cast_diff PRIVATE BLOB_PATH="${diff_model}")
+
+
+# ToF
+dai_add_example(spatial_tiny_yolo_tof_v3 SpatialDetection/spatial_tiny_yolo_tof.cpp OFF OFF)
+dai_add_example(spatial_tiny_yolo_tof_v4 SpatialDetection/spatial_tiny_yolo_tof.cpp OFF OFF)
+target_compile_definitions(spatial_tiny_yolo_tof_v3 PRIVATE BLOB_PATH="${tiny_yolo_v3_blob}")
+target_compile_definitions(spatial_tiny_yolo_tof_v4 PRIVATE BLOB_PATH="${tiny_yolo_v4_blob}")
