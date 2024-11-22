@@ -12,7 +12,7 @@
 #include <sstream>
 #include <system_error>
 
-#include "build/version.hpp"
+// #include "build/version.hpp"
 #include "sha1.hpp"
 #include "utility/Environment.hpp"
 #include "utility/Logging.hpp"
