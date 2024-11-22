@@ -7,12 +7,12 @@ namespace depthai {
 
 namespace res_chars {
 // These are the files which are available in this resource library
-// Pointers to E:/Code/MOVERSE/depthai-core/build/resources/depthai-device-fwp-7665aed8712bb941958660a0103868908726eb56.tar.xz
-extern const char* const f_2290_depthai_device_fwp_7665aed8712bb941958660a0103868908726eb56_tar_xz_begin;
-extern const char* const f_2290_depthai_device_fwp_7665aed8712bb941958660a0103868908726eb56_tar_xz_end;
-// Pointers to E:/Code/MOVERSE/depthai-core/build/resources/depthai-bootloader-fwp-0.0.26.tar.xz
-extern const char* const f_ef89_depthai_bootloader_fwp_0_0_26_tar_xz_begin;
-extern const char* const f_ef89_depthai_bootloader_fwp_0_0_26_tar_xz_end;
+// Pointers to C:/Users/vlad/code/moverse/depthai-core-v2.28.0/build/resources/depthai-device-fwp-9ed7c9ae4c232ff93a3500a585a6b1c00650e22c.tar.xz
+extern const char* const f_9c23_depthai_device_fwp_9ed7c9ae4c232ff93a3500a585a6b1c00650e22c_tar_xz_begin;
+extern const char* const f_9c23_depthai_device_fwp_9ed7c9ae4c232ff93a3500a585a6b1c00650e22c_tar_xz_end;
+// Pointers to C:/Users/vlad/code/moverse/depthai-core-v2.28.0/build/resources/depthai-bootloader-fwp-0.0.28.tar.xz
+extern const char* const f_322a_depthai_bootloader_fwp_0_0_28_tar_xz_begin;
+extern const char* const f_322a_depthai_bootloader_fwp_0_0_28_tar_xz_end;
 }
 
 namespace {
@@ -30,19 +30,19 @@ get_root_index() {
     (void)root_directory_dir;
     
     root_index.emplace(
-        "depthai-device-fwp-7665aed8712bb941958660a0103868908726eb56.tar.xz",
+        "depthai-device-fwp-9ed7c9ae4c232ff93a3500a585a6b1c00650e22c.tar.xz",
         root_directory_dir.directory.add_file(
-            "depthai-device-fwp-7665aed8712bb941958660a0103868908726eb56.tar.xz",
-            res_chars::f_2290_depthai_device_fwp_7665aed8712bb941958660a0103868908726eb56_tar_xz_begin,
-            res_chars::f_2290_depthai_device_fwp_7665aed8712bb941958660a0103868908726eb56_tar_xz_end
+            "depthai-device-fwp-9ed7c9ae4c232ff93a3500a585a6b1c00650e22c.tar.xz",
+            res_chars::f_9c23_depthai_device_fwp_9ed7c9ae4c232ff93a3500a585a6b1c00650e22c_tar_xz_begin,
+            res_chars::f_9c23_depthai_device_fwp_9ed7c9ae4c232ff93a3500a585a6b1c00650e22c_tar_xz_end
         )
     );
     root_index.emplace(
-        "depthai-bootloader-fwp-0.0.26.tar.xz",
+        "depthai-bootloader-fwp-0.0.28.tar.xz",
         root_directory_dir.directory.add_file(
-            "depthai-bootloader-fwp-0.0.26.tar.xz",
-            res_chars::f_ef89_depthai_bootloader_fwp_0_0_26_tar_xz_begin,
-            res_chars::f_ef89_depthai_bootloader_fwp_0_0_26_tar_xz_end
+            "depthai-bootloader-fwp-0.0.28.tar.xz",
+            res_chars::f_322a_depthai_bootloader_fwp_0_0_28_tar_xz_begin,
+            res_chars::f_322a_depthai_bootloader_fwp_0_0_28_tar_xz_end
         )
     );
     return root_index;
