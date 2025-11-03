@@ -50,3 +50,5 @@ install*
 !install_requirements.py
 build*
 depthai_calib_backup.json
+
+*.obj
