@@ -1,28 +1,19 @@
 #pragma once
-
-#include <cstdint>
-#include <mutex>
 #include <string>
-#include <thread>
-#include <unordered_map>
-#include <vector>
 
 // libraries
+#include <spdlog/fmt/std.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 // shared
-#include <depthai-shared/log/LogConstants.hpp>
-
-// project
-#include <depthai/device/Device.hpp>
-#include <depthai/device/DeviceBootloader.hpp>
-#include <depthai/openvino/OpenVINO.hpp>
-#include <depthai/utility/Path.hpp>
-
-#include "Environment.hpp"
+#include <depthai/log/LogConstants.hpp>
+#include <depthai/log/LogLevel.hpp>
 
 namespace dai {
+
+LogLevel spdlogLevelToLogLevel(spdlog::level::level_enum level, LogLevel defaultValue = LogLevel::OFF);
+spdlog::level::level_enum logLevelToSpdlogLevel(LogLevel level, spdlog::level::level_enum defaultValue = spdlog::level::off);
 
 class Logging {
     // private constructor
@@ -39,7 +30,7 @@ class Logging {
 
     // Public API
     spdlog::logger logger;
-    spdlog::level::level_enum parseLevel(std::string lvl);
+    static spdlog::level::level_enum parseLevel(std::string lvl);
 };
 
 namespace logger {
@@ -65,22 +56,22 @@ inline void trace(const FormatString& fmt, Args&&... args) {
 
 template <typename FormatString, typename... Args>
 inline void debug(const FormatString& fmt, Args&&... args) {
-    Logging::getInstance().logger.debug(fmt::runtime(fmt), std::forward<Args>(args)...);
+    Logging::getInstance().logger.debug(fmt, std::forward<Args>(args)...);
 }
 
 template <typename FormatString, typename... Args>
 inline void info(const FormatString& fmt, Args&&... args) {
-    Logging::getInstance().logger.info(fmt::runtime(fmt), std::forward<Args>(args)...);
+    Logging::getInstance().logger.info(fmt, std::forward<Args>(args)...);
 }
 
 template <typename FormatString, typename... Args>
 inline void warn(const FormatString& fmt, Args&&... args) {
-    Logging::getInstance().logger.warn(fmt::runtime(fmt), std::forward<Args>(args)...);
+    Logging::getInstance().logger.warn(fmt, std::forward<Args>(args)...);
 }
 
 template <typename FormatString, typename... Args>
 inline void error(const FormatString& fmt, Args&&... args) {
-    Logging::getInstance().logger.error(fmt::runtime(fmt), std::forward<Args>(args)...);
+    Logging::getInstance().logger.error(fmt, std::forward<Args>(args)...);
 }
 
 template <typename FormatString, typename... Args>
