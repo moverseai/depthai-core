@@ -1,5 +1,6 @@
 #include <depthai/device/Version.hpp>
-#include <semver.hpp>
+//#include <semver.hpp>
+#include <neargye/semver.hpp>
 
 namespace dai {
 
@@ -42,7 +43,8 @@ class Version::Impl {
          const PreReleaseType& type,
          const std::optional<uint16_t>& preReleaseVersion,
          const std::string& buildInfo)
-        : version(major, minor, patch, convertPreReleaseToSemver(type), preReleaseVersion), buildInfo(buildInfo) {}
+        //: version(major, minor, patch, convertPreReleaseToSemver(type), preReleaseVersion), buildInfo(buildInfo) {}
+		: version(major, minor, patch, convertPreReleaseToSemver(type), static_cast<std::uint8_t>(preReleaseVersion.value_or(0))), buildInfo(buildInfo) {}
 
     bool operator==(const Impl& other) const {
         return version == other.version;

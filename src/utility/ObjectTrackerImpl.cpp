@@ -2,7 +2,8 @@
 
 #include "ObjectTrackerImpl.hpp"
 
-#include <fmt/base.h>
+#include <fmt/core.h>
+//#include <fmt/base.h>
 
 #include "eigen3/Eigen/Dense"
 #include "properties/ObjectTrackerProperties.hpp"
