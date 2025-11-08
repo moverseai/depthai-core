@@ -791,7 +791,7 @@ target_link_libraries(${TARGET_CORE_NAME}
         LibArchive::LibArchive
         ZLIB::ZLIB
         httplib::httplib
-        semver::semver
+        # semver::semver
         magic_enum::magic_enum
         liblzma::liblzma
         lz4::lz4
