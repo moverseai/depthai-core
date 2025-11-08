@@ -17,17 +17,17 @@ option(DEPTHAI_ENABLE_APRIL_TAG "Enable AprilTag node (not available for Windows
 option(DEPTHAI_ENABLE_PROTOBUF "Enable Protobuf support" ON)
 option(DEPTHAI_ENABLE_CURL "Enable CURL support" ${DEPTHAI_DEFAULT_CURL_SUPPORT})
 option(DEPTHAI_ENABLE_KOMPUTE "Enable Kompute support" OFF)
-option(DEPTHAI_ENABLE_MP4V2 "Enable video recording using the MP4V2 library" ON)
+option(DEPTHAI_ENABLE_MP4V2 "Enable video recording using the MP4V2 library" OFF)
 
 # ---------- Optional Features (public) -------------
 option(DEPTHAI_OPENCV_SUPPORT "Enable optional OpenCV support" ON)
-option(DEPTHAI_XTENSOR_SUPPORT "Enable optional xtensor support" ON)
+option(DEPTHAI_XTENSOR_SUPPORT "Enable optional xtensor support" OFF)
 option(DEPTHAI_PCL_SUPPORT "Enable optional PCL support" OFF)
 
 option(DEPTHAI_RTABMAP_SUPPORT "Enable optional RTABMap support" OFF)
 option(DEPTHAI_BASALT_SUPPORT "Enable optional Basalt support" OFF)
 
-option(DEPTHAI_DYNAMIC_CALIBRATION_SUPPORT "Enable Dynamic Calibration support" ON)
+option(DEPTHAI_DYNAMIC_CALIBRATION_SUPPORT "Enable Dynamic Calibration support" OFF)
 
 # Build Behaviour
 option(DEPTHAI_MERGED_TARGET "Enable merged target build" ON)
@@ -40,8 +40,9 @@ option(DEPTHAI_NEW_FIND_PYTHON "Use new FindPython module" ON)
 option(DEPTHAI_INSTALL "Enable install target for depthai-core targets" ON)
 
 # ---------- Dependency Management -------------
-option(DEPTHAI_BOOTSTRAP_VCPKG "Automatically bootstrap VCPKG" ON)
-option(DEPTHAI_VCPKG_INTERNAL_ONLY "Use VCPKG internally, but not for interface libraries" ON)
+option(DEPTHAI_BOOTSTRAP_VCPKG "Automatically bootstrap VCPKG" OFF)
+option(DEPTHAI_VCPKG_INTERNAL_ONLY "Use VCPKG internally, but not for interface libraries" OFF)
+# set(DEPTHAI_BOOTSTRAP_VCPKG OFF)
 
 set(USE_EXTERNAL_INTERFACE_LIBS_DEFAULT ON)
 if(DEPTHAI_VCPKG_INTERNAL_ONLY)
@@ -121,3 +122,5 @@ option(DEPTHAI_SANITIZE "Enable Address and Undefined sanitizers for library, ex
 # Local override paths
 set(DEPTHAI_XLINK_LOCAL "" CACHE STRING "Path to local XLink source to use instead of Hunter")
 set(DEPTHAI_BOOTLOADER_SHARED_LOCAL "" CACHE STRING "Path to local depthai-bootloader-shared source to use instead of submodule")
+
+set(DEPTHAI_XLINK_LOCAL "../XLink")
